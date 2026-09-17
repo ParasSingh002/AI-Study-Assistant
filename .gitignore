@@ -1,0 +1,15 @@
+# Python cache files
+__pycache__/
+*.pyc
+
+# Virtual environment folders
+venv/
+env/
+.venv/
+
+# Environment variables / secrets — NEVER commit your API key
+.env
+
+# Editor/OS junk
+.vscode/
+.DS_Store

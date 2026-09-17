@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Study Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="container">
+    <h1>📘 AI Study Assistant</h1>
+    <p class="subtitle">Paste your notes, ask a question, get an answer.</p>
+
+    <label for="notes">Your Notes (optional)</label>
+    <textarea id="notes" rows="8" placeholder="Paste your study notes here..."></textarea>
+
+    <label for="question">Your Question</label>
+    <input type="text" id="question" placeholder="e.g. What is the main idea of these notes?" />
+
+    <button id="askBtn">Ask</button>
+
+    <div id="loading" class="hidden">Thinking...</div>
+
+    <div id="answerBox" class="hidden">
+      <h2>Answer</h2>
+      <p id="answerText"></p>
+    </div>
+
+    <div id="errorBox" class="hidden">
+      <p id="errorText"></p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

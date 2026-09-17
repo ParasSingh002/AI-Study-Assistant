@@ -43,7 +43,7 @@ askBtn.addEventListener("click", async () => {
       return;
     }
 
-    answerText.textContent = data.answer;
+    answerText.innerHTML = marked.parse(data.answer);
     answerBox.classList.remove("hidden");
 
   } catch (err) {
@@ -51,6 +51,16 @@ askBtn.addEventListener("click", async () => {
   } finally {
     loading.classList.add("hidden");
     askBtn.disabled = false;
+  }
+});
+
+// Let the user press Enter inside the question box to trigger the
+// same action as clicking the Ask button, instead of only working
+// via the mouse click.
+questionInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault(); // stops it from doing anything unexpected
+    askBtn.click();          // reuses the exact same logic as clicking Ask
   }
 });
 

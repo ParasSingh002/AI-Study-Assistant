@@ -2,19 +2,21 @@
 AI Study Assistant — Flask backend
 -----------------------------------
 Takes study notes + a question from the user, sends both to Google's
-Gemini API, and returns an AI-generated answer grounded in those notes.
+Gemini API using Google's official SDK, and returns an AI-generated
+answer grounded in those notes.
 
 Flow:
 1. Frontend (index.html) sends a POST request to /ask with JSON:
        { "notes": "...", "question": "..." }
 2. This file builds a prompt combining the notes + question.
-3. We call the Gemini API with that prompt.
+3. We call Gemini via the official google-genai SDK (handles auth
+   correctly regardless of API key format).
 4. We send the model's answer back to the frontend as JSON.
 """
 
 import os
-import requests
 from flask import Flask, render_template, request, jsonify
+from google import genai
 
 app = Flask(__name__)
 
@@ -22,13 +24,16 @@ app = Flask(__name__)
 # Get a free Gemini API key from https://aistudio.google.com/app/apikey
 # Never hardcode your real key in code you push to GitHub.
 # Instead, set it as an environment variable before running:
-#   export GEMINI_API_KEY="your-key-here"      (Mac/Linux)
-#   set GEMINI_API_KEY=your-key-here           (Windows cmd)
+#   $env:GEMINI_API_KEY="your-key-here"      (Windows PowerShell)
+#   export GEMINI_API_KEY="your-key-here"    (Mac/Linux)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent"
-)
+
+# The SDK client reads the key from the GEMINI_API_KEY environment
+# variable automatically, but we pass it explicitly here to be clear
+# about where it's coming from.
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+MODEL_NAME = "gemini-3.6-flash"
 
 
 @app.route("/")
@@ -50,7 +55,7 @@ def ask():
     if not question:
         return jsonify({"error": "Please enter a question."}), 400
 
-    if not GEMINI_API_KEY:
+    if not client:
         return jsonify({
             "error": "No API key configured. Set the GEMINI_API_KEY "
                      "environment variable before running the server."
@@ -73,29 +78,15 @@ def ask():
             f"clearly and simply:\n\n{question}"
         )
 
-    payload = {
-        "contents": [
-            {"parts": [{"text": prompt}]}
-        ]
-    }
-
     try:
-        response = requests.post(
-            f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-            json=payload,
-            timeout=30,
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
         )
-        response.raise_for_status()
-        result = response.json()
+        return jsonify({"answer": response.text})
 
-        # Gemini's response is nested — we pull out just the text.
-        answer = result["candidates"][0]["content"]["parts"][0]["text"]
-        return jsonify({"answer": answer})
-
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return jsonify({"error": f"Request to Gemini failed: {str(e)}"}), 500
-    except (KeyError, IndexError):
-        return jsonify({"error": "Unexpected response format from Gemini."}), 500
 
 
 if __name__ == "__main__":
